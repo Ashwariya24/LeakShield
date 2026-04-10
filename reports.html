@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reports & Response — DarkSentinel</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .rp-layout { position:relative;z-index:1;max-width:1280px;margin:0 auto;padding:2rem 1.5rem 5rem;display:grid;grid-template-columns:1fr 288px;gap:1.125rem; }
+    .rp-main { display:flex;flex-direction:column;gap:1.125rem;min-width:0; }
+    .rp-side { display:flex;flex-direction:column;gap:1.125rem; }
+    @media(max-width:1024px){.rp-layout{grid-template-columns:1fr;}.rp-side{display:grid;grid-template-columns:repeat(2,1fr);}}
+    @media(max-width:640px){.rp-side{grid-template-columns:1fr;}.exec-kpis{grid-template-columns:repeat(2,1fr);}}
+    /* Executive preview */
+    .exec-kpis { display:grid;grid-template-columns:repeat(4,1fr);gap:0.875rem;margin-bottom:1.25rem; }
+    .exec-kpi { text-align:center; padding:0.875rem;background:var(--bg-overlay);border-radius:var(--r-lg);border:1px solid var(--border); }
+    .exec-kv  { font-size:1.5rem;font-weight:800;letter-spacing:-0.03em; }
+    .exec-kl  { font-size:0.65rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--tx-3);margin-top:0.25rem; }
+    /* AA Item */
+    /* Spinner */
+    .gen-progress { text-align:center;padding:3rem; }
+    /* Playbook styles already in styles.css */
+  </style>
+</head>
+<body>
+  <div class="ambient"><div class="amb-blob amb-1"></div></div>
+
+  <nav class="topnav">
+    <div class="topnav-inner">
+      <a href="index.html" class="nav-logo">
+        <div class="nav-logo-icon"><svg viewBox="0 0 14 14" fill="none"><path d="M7 1L1.5 3.5v4.5c0 3.3 2.3 6.3 5.5 7 3.2-.7 5.5-3.7 5.5-7V3.5L7 1z" fill="white" opacity="0.9"/><circle cx="7" cy="8" r="2" fill="none" stroke="#09090f" stroke-width="1.1"/><circle cx="7" cy="8" r="0.8" fill="#09090f"/></svg></div>
+        <span class="nav-logo-text">DarkSentinel</span>
+      </a>
+      <div class="nav-links">
+        <a href="index.html" class="nav-link">Platform</a><a href="check.html" class="nav-link">Check Exposure</a>
+        <a href="dashboard.html" class="nav-link">Dashboard</a><a href="threat-intel.html" class="nav-link">Threat Intel</a>
+        <a href="reports.html" class="nav-link active">Reports</a>
+      </div>
+      <div class="nav-right"><button class="btn btn-primary btn-sm" onclick="genReport()">Generate Report</button></div>
+    </div>
+  </nav>
+
+  <div class="page">
+    <div class="page-hero" style="position:relative;z-index:1">
+      <div class="container">
+        <div class="eyebrow" style="margin-bottom:0.625rem">Reports & Response</div>
+        <h1 style="font-size:1.5rem;font-weight:700;letter-spacing:-0.02em;margin-bottom:0.25rem">Incident Reports & Auto-Remediation</h1>
+        <p style="font-size:0.825rem;color:var(--tx-2)">Generate compliance-ready reports and execute automated response playbooks.</p>
+      </div>
+    </div>
+
+    <div class="rp-layout">
+      <div class="rp-main">
+
+        <!-- Report Builder -->
+        <div class="card" id="builderCard">
+          <div class="card-hd">
+            <span class="card-title">Report Builder</span>
+            <div class="pill-tabs" id="rpTypeTabs">
+              <button class="pill-tab active" onclick="rpType('incident',this)">Incident</button>
+              <button class="pill-tab" onclick="rpType('compliance',this)">Compliance</button>
+              <button class="pill-tab" onclick="rpType('executive',this)">Executive</button>
+            </div>
+          </div>
+
+          <!-- Incident form -->
+          <div class="card-bd" id="incidentPane">
+            <div class="grid-2" style="margin-bottom:0.875rem">
+              <div><label class="form-label">Organization / Domain</label><input class="form-input" value="example.com" id="rpOrg" /></div>
+              <div><label class="form-label">Report Period</label><select class="form-select" id="rpPeriod"><option>Last 7 days</option><option selected>Last 30 days</option><option>Last 90 days</option></select></div>
+            </div>
+            <div class="grid-2" style="margin-bottom:0.875rem">
+              <div>
+                <label class="form-label">Severity Levels</label>
+                <div class="cb-group">
+                  <label class="cb-item"><input type="checkbox" checked/><span>Critical</span></label>
+                  <label class="cb-item"><input type="checkbox" checked/><span>High</span></label>
+                  <label class="cb-item"><input type="checkbox" checked/><span>Medium</span></label>
+                  <label class="cb-item"><input type="checkbox"/><span>Low</span></label>
+                </div>
+              </div>
+              <div>
+                <label class="form-label">Report Sections</label>
+                <div class="cb-group">
+                  <label class="cb-item"><input type="checkbox" checked/><span>Executive Summary</span></label>
+                  <label class="cb-item"><input type="checkbox" checked/><span>Breach Details</span></label>
+                  <label class="cb-item"><input type="checkbox" checked/><span>Credentials</span></label>
+                  <label class="cb-item"><input type="checkbox" checked/><span>Remediation</span></label>
+                </div>
+              </div>
+            </div>
+            <div style="margin-bottom:0.875rem">
+              <label class="form-label">Compliance Framework</label>
+              <div class="fw-chips">
+                <button class="fw-chip on" onclick="this.classList.toggle('on')">GDPR</button>
+                <button class="fw-chip" onclick="this.classList.toggle('on')">HIPAA</button>
+                <button class="fw-chip on" onclick="this.classList.toggle('on')">SOC 2</button>
+                <button class="fw-chip" onclick="this.classList.toggle('on')">ISO 27001</button>
+                <button class="fw-chip" onclick="this.classList.toggle('on')">NIST CSF</button>
+                <button class="fw-chip" onclick="this.classList.toggle('on')">PCI-DSS</button>
+              </div>
+            </div>
+            <div style="margin-bottom:1.125rem">
+              <label class="form-label">Recipient email(s)</label>
+              <input class="form-input" type="email" placeholder="ciso@example.com, security@example.com" />
+            </div>
+            <div style="display:flex;gap:0.625rem;flex-wrap:wrap">
+              <button class="btn btn-primary" onclick="genReport()">Generate & Download PDF</button>
+              <button class="btn btn-ghost btn-sm" onclick="genReport()">Preview</button>
+              <button class="btn btn-ghost btn-sm">Send via Email</button>
+            </div>
+          </div>
+
+          <!-- Compliance -->
+          <div class="card-bd hidden" id="compliancePane">
+            <div class="grid-3">
+              <div class="card card-sm" style="border-top:2px solid var(--indigo)">
+                <div class="card-hd"><span class="card-title">GDPR Art. 33</span><span class="badge badge-red">48h</span></div>
+                <div class="card-bd-sm">
+                  <p class="text-sm col-2" style="margin-bottom:0.875rem">Breach notification to supervisory authority within 72h. Pre-filled with incident data.</p>
+                  <button class="btn btn-primary btn-sm w-full">Generate GDPR Notice</button>
+                </div>
+              </div>
+              <div class="card card-sm" style="border-top:2px solid var(--emerald)">
+                <div class="card-hd"><span class="card-title">HIPAA</span><span class="badge badge-amber">60 days</span></div>
+                <div class="card-bd-sm">
+                  <p class="text-sm col-2" style="margin-bottom:0.875rem">HHS notification for healthcare data exposures. 60-day reporting window.</p>
+                  <button class="btn btn-primary btn-sm w-full">Generate HIPAA Report</button>
+                </div>
+              </div>
+              <div class="card card-sm" style="border-top:2px solid var(--indigo)">
+                <div class="card-hd"><span class="card-title">SOC 2</span><span class="badge badge-indigo">Audit ready</span></div>
+                <div class="card-bd-sm">
+                  <p class="text-sm col-2" style="margin-bottom:0.875rem">Security incident log formatted for SOC 2 Type II audit evidence with response timeline.</p>
+                  <button class="btn btn-primary btn-sm w-full">Generate SOC 2 Log</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Executive -->
+          <div class="card-bd hidden" id="executivePane">
+            <div style="background:var(--bg-overlay);border:1px solid var(--border);border-radius:var(--r-xl);padding:1.75rem">
+              <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1.25rem;padding-bottom:1.25rem;border-bottom:1px solid var(--border)">
+                <div style="width:40px;height:40px;border-radius:var(--r-md);background:linear-gradient(135deg,var(--indigo),var(--sky));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.875rem;color:white;flex-shrink:0">DS</div>
+                <div><div style="font-size:0.975rem;font-weight:700">Executive Security Brief</div><div class="text-xs col-3">January 2024 · DarkSentinel Report</div></div>
+                <span class="badge badge-amber" style="margin-left:auto">Moderate Risk</span>
+              </div>
+              <div class="exec-kpis">
+                <div class="exec-kpi"><div class="exec-kv col-red">7</div><div class="exec-kl">Active Incidents</div></div>
+                <div class="exec-kpi"><div class="exec-kv col-amber">1,284</div><div class="exec-kl">Exposed Creds</div></div>
+                <div class="exec-kpi"><div class="exec-kv col-emerald">142</div><div class="exec-kl">Resolved</div></div>
+                <div class="exec-kpi"><div class="exec-kv col-sky">30s</div><div class="exec-kl">Avg Alert Time</div></div>
+              </div>
+              <p class="text-sm col-2" style="line-height:1.7;margin-bottom:1rem">During the reporting period, DarkSentinel detected <strong style="color:var(--tx-1)">7 significant credential exposure incidents</strong> for example.com. The most critical involved a BreachForums dump containing 1,284 credentials in plaintext. Response time averaged 30 seconds.</p>
+              <div style="border-top:1px solid var(--border);padding-top:1rem">
+                <div class="text-xs font-700" style="color:var(--sky);margin-bottom:0.5rem;text-transform:uppercase;letter-spacing:0.06em">Top Recommendations</div>
+                <ol style="padding-left:1rem;display:flex;flex-direction:column;gap:0.3rem">
+                  <li class="text-sm col-2">Enforce MFA across all accounts — current adoption at 64%</li>
+                  <li class="text-sm col-2">Deploy email security gateway to intercept phishing campaigns</li>
+                  <li class="text-sm col-2">Rotate all AWS IAM keys created before Q1 2024</li>
+                </ol>
+              </div>
+            </div>
+            <button class="btn btn-primary" style="margin-top:1rem" onclick="genReport()">Download Executive PDF</button>
+          </div>
+        </div>
+
+        <!-- Generation Progress -->
+        <div class="card hidden" id="progressCard">
+          <div class="gen-progress">
+            <div class="spinner"></div>
+            <div style="font-size:0.825rem;font-weight:600;font-family:var(--mono);color:var(--indigo-lt);margin-bottom:0.625rem" id="progLabel">Compiling incident data…</div>
+            <div class="progress" style="max-width:320px;margin:0 auto 0.375rem"><div class="progress-bar pb-indigo" id="progFill" style="width:0%"></div></div>
+            <div class="text-xs col-3 font-mono" id="progPct">0%</div>
+          </div>
+        </div>
+
+        <!-- Report Preview -->
+        <div class="card hidden" id="previewCard">
+          <div class="card-hd">
+            <span class="card-title">Report Preview</span>
+            <div style="display:flex;gap:0.5rem">
+              <button class="btn btn-primary btn-sm" onclick="downloadReport()">Download PDF</button>
+              <button class="btn-icon-sm" onclick="document.getElementById('previewCard').classList.add('hidden')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+            </div>
+          </div>
+          <div class="card-bd"><div class="report-doc" id="reportContent"></div></div>
+        </div>
+
+        <!-- Playbooks -->
+        <div class="card">
+          <div class="card-hd"><span class="card-title">Response Playbooks</span><button class="btn-micro">+ Create</button></div>
+          <div id="playbooksList"></div>
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <div class="rp-side">
+        <div class="card">
+          <div class="card-hd"><span class="card-title">Period Statistics</span></div>
+          <div class="card-bd">
+            <div class="str"><span class="col-2 text-sm">Total Incidents</span><span class="str-v col-red">7</span></div>
+            <div class="str"><span class="col-2 text-sm">Exposed Credentials</span><span class="str-v col-amber">1,284</span></div>
+            <div class="str"><span class="col-2 text-sm">Paste Detections</span><span class="str-v col-sky">23</span></div>
+            <div class="str"><span class="col-2 text-sm">Dark Web Mentions</span><span class="str-v col-indigo">6</span></div>
+            <div class="str"><span class="col-2 text-sm">API Keys Exposed</span><span class="str-v col-amber">3</span></div>
+            <div class="str"><span class="col-2 text-sm">Resolved</span><span class="str-v col-emerald">142</span></div>
+            <div class="str"><span class="col-2 text-sm">Avg Response Time</span><span class="str-v col-sky">18m</span></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-hd"><span class="card-title">AutoRemediate</span><span class="badge badge-indigo">Beta</span></div>
+          <div class="card-bd">
+            <p class="text-sm col-2" style="margin-bottom:0.875rem">Automatically execute remediation when exposure is detected.</p>
+            <div id="aaList"></div>
+            <button class="btn btn-danger btn-sm w-full" style="margin-top:0.75rem" onclick="runAR(this)">Run Now</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-hd"><span class="card-title">Alert Activity</span></div>
+          <div id="notifList"></div>
+        </div>
+
+        <div class="card" style="border-top:2px solid var(--amber)">
+          <div class="card-hd"><span class="card-title">GDPR 72h Timer</span><span class="badge badge-red">Active</span></div>
+          <div class="card-bd">
+            <p class="text-xs col-2" style="margin-bottom:1rem">Notification deadline — BreachForums incident:</p>
+            <div class="countdown-row">
+              <div class="cd-u"><span class="cd-v" id="cdH">23</span><span class="cd-l">Hrs</span></div>
+              <span class="cd-sep">:</span>
+              <div class="cd-u"><span class="cd-v" id="cdM">47</span><span class="cd-l">Min</span></div>
+              <span class="cd-sep">:</span>
+              <div class="cd-u"><span class="cd-v" id="cdS">33</span><span class="cd-l">Sec</span></div>
+            </div>
+            <button class="btn btn-primary btn-sm w-full" style="margin-top:1rem">File GDPR Notice</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer"><div class="container"><div class="footer-inner">
+    <span>© 2026 DarkSentinel — Reports & Response</span>
+    <div class="footer-live"><div class="dot dot-emerald dot-pulse"></div>Monitoring active</div>
+  </div></div></footer>
+  <script src="reports.js"></script>
+</body>
+</html>

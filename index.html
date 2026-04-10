@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DarkSentinel — Credential Leak & Dark Web Monitoring Platform</title>
+  <meta name="description" content="Enterprise-grade dark web monitoring and credential leak alert system. Detect exposure across paste sites, breach databases, and dark web markets in real time." />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* ── Landing-only styles ── */
+
+    /* Hero */
+    .hero-section {
+      min-height: calc(100vh - 56px);
+      display: flex; flex-direction: column; justify-content: center;
+      padding: 5rem 0 4rem; position: relative; z-index: 1;
+    }
+    .hero-eyebrow { margin-bottom: 1.75rem; }
+    .hero-h1 {
+      font-size: clamp(2.8rem, 5vw, 4.25rem);
+      font-weight: 800; letter-spacing: -0.04em; line-height: 1.06;
+      margin-bottom: 1.5rem;
+    }
+    .hero-h1 .gradient-text {
+      background: linear-gradient(90deg, #818cf8, #38bdf8);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .hero-sub {
+      font-size: 1.05rem; color: var(--tx-2); line-height: 1.75;
+      max-width: 560px; margin-bottom: 2.5rem;
+    }
+    .hero-actions { display: flex; align-items: center; gap: 0.875rem; flex-wrap: wrap; }
+    .hero-scan-wrap {
+      display: flex; gap: 0; background: var(--bg-raised); border: 1px solid var(--border-md);
+      border-radius: var(--r-md); padding: 4px; margin-bottom: 1rem;
+      max-width: 520px; transition: border-color var(--t);
+    }
+    .hero-scan-wrap:focus-within { border-color: var(--indigo); box-shadow: 0 0 0 3px rgba(79,70,229,0.1); }
+    .hero-scan-wrap input {
+      flex: 1; background: none; border: none; outline: none; color: var(--tx-1);
+      font-size: 0.9rem; font-family: var(--font); padding: 0.6rem 0.875rem;
+    }
+    .hero-scan-wrap input::placeholder { color: var(--tx-3); }
+    .hero-trust { display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap; }
+    .hero-trust-item { display: flex; align-items: center; gap: 0.35rem; font-size: 0.775rem; color: var(--tx-3); }
+    .hero-trust-item svg { width: 13px; height: 13px; color: var(--emerald); }
+
+    /* Hero right — terminal window */
+    .hero-visual { position: relative; }
+    .terminal-window {
+      background: var(--bg-raised); border: 1px solid var(--border-md);
+      border-radius: var(--r-xl); overflow: hidden; box-shadow: var(--shadow-lg);
+    }
+    .term-bar {
+      background: var(--bg-overlay); border-bottom: 1px solid var(--border);
+      padding: 0.625rem 1rem; display: flex; align-items: center; gap: 0.875rem;
+    }
+    .term-dots { display: flex; gap: 6px; }
+    .term-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .td-red { background: #ff5f57; } .td-amber { background: #febc2e; } .td-green { background: #28c840; }
+    .term-title { font-size: 0.72rem; color: var(--tx-3); font-family: var(--mono); margin: 0 auto; }
+    .term-body { padding: 1.25rem; font-family: var(--mono); font-size: 0.78rem; line-height: 1.8; max-height: 340px; overflow-y: auto; }
+    .term-line { display: flex; gap: 0.5rem; margin-bottom: 0.1rem; }
+    .term-prompt { color: var(--indigo-lt); flex-shrink: 0; }
+    .term-cmd { color: var(--tx-1); }
+    .term-output { color: var(--tx-2); padding-left: 1rem; }
+    .term-ok    { color: var(--emerald); }
+    .term-warn  { color: var(--amber); }
+    .term-crit  { color: var(--red); font-weight: 600; }
+    .term-cursor { display: inline-block; width: 7px; height: 14px; background: var(--indigo-lt); animation: cursorBlink 1.2s steps(1) infinite; vertical-align: text-bottom; }
+    @keyframes cursorBlink { 0%,100%{opacity:1;} 50%{opacity:0;} }
+
+    /* Floating alert card */
+    .float-card {
+      position: absolute; background: var(--bg-raised); border: 1px solid var(--border-md);
+      border-radius: var(--r-md); padding: 0.75rem 1rem; box-shadow: var(--shadow);
+      min-width: 220px; animation: floatUpDown 4s ease-in-out infinite;
+    }
+    .float-card-1 { top: -24px; right: -20px; animation-delay: 0s; }
+    .float-card-2 { bottom: -20px; left: -24px; animation-delay: -2s; }
+    @keyframes floatUpDown { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-8px);} }
+    .fc-title { font-size: 0.775rem; font-weight: 600; margin-bottom: 0.3rem; }
+    .fc-sub   { font-size: 0.7rem; color: var(--tx-3); }
+    .fc-dot   { width: 7px; height: 7px; border-radius: 50; background: var(--red); }
+
+    /* Hero Grid */
+    .hero-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5rem; align-items: center; }
+
+    /* ── Stats section ── */
+    .stats-section { position: relative; z-index: 1; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .stats-inner { display: grid; grid-template-columns: repeat(4,1fr); }
+    .stat-block { padding: 2rem 1.5rem; border-right: 1px solid var(--border); }
+    .stat-block:last-child { border-right: none; }
+    .sb-val  { font-size: 2.25rem; font-weight: 800; letter-spacing: -0.04em; line-height: 1; margin-bottom: 0.35rem; }
+    .sb-desc { font-size: 0.8rem; color: var(--tx-3); }
+
+    /* ── How it works ── */
+    .hiw-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: var(--r-xl); overflow: hidden; }
+    .hiw-cell {
+      background: var(--bg-raised); padding: 2rem 1.75rem;
+      transition: background var(--t);
+    }
+    .hiw-cell:hover { background: var(--bg-overlay); }
+    .hiw-step { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--tx-3); margin-bottom: 1.25rem; }
+    .hiw-icon-wrap{
+      width: 40px; height: 40px; border-radius: var(--r-md);
+      background: var(--indigo-bg); border: 1px solid var(--indigo-bd);
+      display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;
+    }
+    .hiw-icon-wrap svg { width: 18px; height: 18px; color: var(--indigo-lt); }
+    .hiw-h { font-size: 0.975rem; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 0.5rem; }
+    .hiw-p { font-size: 0.8rem; color: var(--tx-2); line-height: 1.65; }
+    .hiw-sources { margin-top: 1rem; display: flex; flex-direction: column; gap: 0.35rem; }
+    .hiw-src { font-size: 0.75rem; color: var(--tx-3); display: flex; align-items: center; gap: 0.375rem; }
+    .hiw-src::before { content: '›'; color: var(--indigo-lt); font-weight: 700; }
+
+    /* ── Features grid ── */
+    .features-grid {
+      display: grid; gap: 1px; background: var(--border);
+      grid-template-columns: repeat(3,1fr);
+      border: 1px solid var(--border); border-radius: var(--r-xl); overflow: hidden;
+    }
+    .feat-cell {
+      background: var(--bg-raised); padding: 1.75rem;
+      transition: background var(--t);
+    }
+    .feat-cell:hover { background: var(--bg-overlay); }
+    .feat-icon { width: 36px; height: 36px; border-radius: var(--r); background: var(--indigo-bg); border: 1px solid var(--indigo-bd); display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; }
+    .feat-icon svg { width: 16px; height: 16px; color: var(--indigo-lt); }
+    .feat-h { font-size: 0.875rem; font-weight: 700; margin-bottom: 0.375rem; letter-spacing: -0.01em; }
+    .feat-p { font-size: 0.78rem; color: var(--tx-2); line-height: 1.6; }
+    .feat-badge { display: inline-block; margin-top: 0.625rem; font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--indigo-lt); background: var(--indigo-bg); border: 1px solid var(--indigo-bd); padding: 0.15rem 0.45rem; border-radius: var(--r-sm); }
+
+    /* ── Live Feed ── */
+    .feed-window {
+      background: var(--bg-raised); border: 1px solid var(--border);
+      border-radius: var(--r-xl); overflow: hidden;
+    }
+    .feed-topbar {
+      background: var(--bg-overlay); border-bottom: 1px solid var(--border);
+      padding: 0.75rem 1.25rem; display: flex; align-items: center; justify-content: space-between;
+    }
+    .feed-topbar-left { display: flex; align-items: center; gap: 0.625rem; }
+    .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--emerald); animation: dotPulse 2s infinite; }
+
+    /* ── Tool cards ── */
+    .tools-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 0.875rem; }
+    .tool-card {
+      background: var(--bg-raised); border: 1px solid var(--border);
+      border-radius: var(--r-xl); padding: 1.5rem; cursor: pointer;
+      transition: all var(--t); display: flex; gap: 1.125rem; align-items: flex-start;
+    }
+    .tool-card:hover { border-color: var(--indigo-bd); background: var(--bg-overlay); }
+    .tool-icon { width: 44px; height: 44px; border-radius: var(--r-md); background: var(--indigo-bg); border: 1px solid var(--indigo-bd); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .tool-icon svg { width: 20px; height: 20px; color: var(--indigo-lt); }
+    .tool-h { font-size: 0.875rem; font-weight: 700; margin-bottom: 0.35rem; letter-spacing: -0.01em; }
+    .tool-p { font-size: 0.78rem; color: var(--tx-2); line-height: 1.6; margin-bottom: 0.5rem; }
+    .tool-link { font-size: 0.775rem; font-weight: 600; color: var(--indigo-lt); display: flex; align-items: center; gap: 0.25rem; }
+    .tool-link svg { width: 12px; height: 12px; }
+
+    /* ── Trust section (certs) ── */
+    .certs-strip { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; }
+    .cert-pill {
+      display: flex; align-items: center; gap: 0.5rem;
+      background: var(--bg-raised); border: 1px solid var(--border);
+      border-radius: var(--r-full); padding: 0.5rem 1rem;
+      font-size: 0.78rem; font-weight: 600; color: var(--tx-2);
+      transition: border-color var(--t);
+    }
+    .cert-pill:hover { border-color: var(--border-md); }
+    .cert-pill svg { width: 14px; height: 14px; color: var(--emerald); }
+
+    /* ── CTA ── */
+    .cta-section { position: relative; z-index: 1; }
+    .cta-card {
+      background: var(--bg-raised); border: 1px solid var(--border);
+      border-radius: var(--r-2xl); padding: 4rem; text-align: center;
+      position: relative; overflow: hidden;
+    }
+    .cta-card::before {
+      content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+      width: 50%; height: 1px; background: linear-gradient(90deg, transparent, var(--indigo-lt), transparent);
+    }
+    .cta-h2 { font-size: 2rem; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 0.75rem; }
+    .cta-p { color: var(--tx-2); max-width: 460px; margin: 0 auto 2rem; line-height: 1.65; }
+    .cta-btns { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+    .cta-trust { display: flex; gap: 1.5rem; justify-content: center; margin-top: 1.5rem; flex-wrap: wrap; }
+    .cta-trust span { font-size: 0.75rem; color: var(--tx-3); display: flex; align-items: center; gap: 0.35rem; }
+    .cta-trust svg { width: 12px; height: 12px; color: var(--emerald); }
+
+    /* ── Section spacing ── */
+    .section { padding: 5rem 0; position: relative; z-index: 1; }
+    .section-sm { padding: 3.5rem 0; position: relative; z-index: 1; }
+    .section-hd { margin-bottom: 3rem; }
+    .section-hd-row { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 3rem; }
+
+    @media (max-width: 900px) {
+      .hero-grid { grid-template-columns: 1fr; }
+      .hero-visual { display: none; }
+      .stats-inner { grid-template-columns: repeat(2,1fr); }
+      .stat-block:nth-child(2) { border-right: none; }
+      .hiw-grid { grid-template-columns: 1fr; }
+      .features-grid { grid-template-columns: 1fr; }
+      .tools-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      .stats-inner { grid-template-columns: 1fr 1fr; }
+      .hero-h1 { font-size: 2.4rem; }
+      .cta-card { padding: 2.5rem 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="ambient"><div class="amb-blob amb-1"></div><div class="amb-blob amb-2"></div></div>
+
+  <!-- Top Nav -->
+  <nav class="topnav">
+    <div class="topnav-inner">
+      <a href="index.html" class="nav-logo">
+        <div class="nav-logo-icon">
+          <svg viewBox="0 0 14 14" fill="none">
+            <path d="M7 1L1.5 3.5v4.5c0 3.3 2.3 6.3 5.5 7 3.2-.7 5.5-3.7 5.5-7V3.5L7 1z" fill="white" opacity="0.9"/>
+            <circle cx="7" cy="8" r="2" fill="none" stroke="#09090f" stroke-width="1.1"/>
+            <circle cx="7" cy="8" r="0.8" fill="#09090f"/>
+          </svg>
+        </div>
+        <span class="nav-logo-text">DarkSentinel</span>
+      </a>
+      <div class="nav-links">
+        <a href="index.html" class="nav-link active">Platform</a>
+        <a href="check.html" class="nav-link">Check Exposure</a>
+        <a href="dashboard.html" class="nav-link">Dashboard</a>
+        <a href="threat-intel.html" class="nav-link">Threat Intel</a>
+        <a href="reports.html" class="nav-link">Reports</a>
+      </div>
+      <div class="nav-right">
+        <div class="nav-badge">
+          <svg width="8" height="8" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill="currentColor"/></svg>
+          47 threats live
+        </div>
+        <div class="nav-divider"></div>
+        <a href="check.html" class="btn btn-ghost btn-sm">Check Now</a>
+        <a href="dashboard.html" class="btn btn-primary btn-sm">Dashboard</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="page">
+
+    <!-- Hero -->
+    <section class="hero-section">
+      <div class="container">
+        <div class="hero-grid">
+          <!-- Left -->
+          <div class="reveal">
+            <div class="hero-eyebrow">
+              <span class="eyebrow">Enterprise Security Intelligence</span>
+            </div>
+            <h1 class="hero-h1">
+              Stop Breaches<br>
+              <span class="gradient-text">Before They Happen</span>
+            </h1>
+            <p class="hero-sub">
+              DarkSentinel monitors 2,800+ intelligence sources — dark web markets, paste sites, breach databases, and GitHub — alerting your security team in under 30 seconds when sensitive data appears.
+            </p>
+            <div class="hero-scan-wrap">
+              <input type="text" id="heroInput" placeholder="Enter email or phone number to check exposure…" />
+              <button class="btn btn-primary" onclick="heroScan()">Scan Free</button>
+            </div>
+            <div class="hero-trust">
+              <span class="hero-trust-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                No account required
+              </span>
+              <span class="hero-trust-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                GDPR compliant
+              </span>
+              <span class="hero-trust-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                Results in 30s
+              </span>
+            </div>
+            <div class="hero-actions mt-6">
+              <a href="dashboard.html" class="btn btn-primary btn-lg">Get Protected →</a>
+              <a href="threat-intel.html" class="btn btn-secondary btn-lg">View Live Threats</a>
+            </div>
+          </div>
+          <!-- Right — Terminal -->
+          <div class="hero-visual reveal-2" style="position:relative">
+            <div class="float-card float-card-1">
+              <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.3rem">
+                <div class="dot dot-red dot-pulse"></div>
+                <span class="fc-title">Critical Alert</span>
+                <span style="margin-left:auto;font-size:0.68rem;color:var(--tx-3)">just now</span>
+              </div>
+              <div class="fc-sub">Credential dump — 1,284 records<br>Source: BreachForums</div>
+            </div>
+            <div class="terminal-window">
+              <div class="term-bar">
+                <div class="term-dots">
+                  <div class="term-dot td-red"></div>
+                  <div class="term-dot td-amber"></div>
+                  <div class="term-dot td-green"></div>
+                </div>
+                <span class="term-title">darksentinel — threat-monitor</span>
+              </div>
+              <div class="term-body" id="termBody">
+                <div class="term-line"><span class="term-prompt">$</span><span class="term-cmd">sentinel scan --domain example.com --full</span></div>
+                <div class="term-output">Initializing threat intelligence scan…</div>
+                <div class="term-output term-ok">✓ Connected to 2,847 sources</div>
+                <div class="term-output">Checking HaveIBeenPwned… <span class="term-crit">7 breaches found</span></div>
+                <div class="term-output">Checking DeHashed… <span class="term-warn">1,284 credentials</span></div>
+                <div class="term-output">Scanning Pastebin… <span class="term-crit">47 email matches</span></div>
+                <div class="term-output">Scanning dark web forums…</div>
+                <div class="term-output term-crit">⚠ CRITICAL: Active sale on BreachForums</div>
+                <div class="term-output term-crit">⚠ CRITICAL: Phishing kit detected on Telegram</div>
+                <div class="term-output">Checking GitHub public repos…</div>
+                <div class="term-output term-warn">⚡ AWS key exposed in public fork</div>
+                <div class="term-output">Calculating risk score…</div>
+                <div class="term-output"><br></div>
+                <div class="term-output">Risk Score: <span class="term-crit">72/100 — HIGH</span></div>
+                <div class="term-output term-ok">✓ Alerts dispatched to Slack + PagerDuty</div>
+                <div class="term-output term-ok">✓ GDPR notification form auto-generated</div>
+                <div class="term-line"><span class="term-prompt">$</span><span class="term-cursor"></span></div>
+              </div>
+            </div>
+            <div class="float-card float-card-2">
+              <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.3rem">
+                <div class="dot dot-emerald"></div>
+                <span class="fc-title">Auto-Remediated</span>
+              </div>
+              <div class="fc-sub">Password reset forced — 47 accounts<br>Alert delivered in 28 seconds</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Stats -->
+    <div class="stats-section">
+      <div class="container" style="padding:0">
+        <div class="stats-inner">
+          <div class="stat-block">
+            <div class="sb-val col-indigo" id="sv1">0</div>
+            <div class="sb-desc">Breach records indexed</div>
+          </div>
+          <div class="stat-block">
+            <div class="sb-val" id="sv2">0</div>
+            <div class="sb-desc">Intelligence sources monitored</div>
+          </div>
+          <div class="stat-block">
+            <div class="sb-val col-emerald" id="sv3">0</div>
+            <div class="sb-desc">Avg. detection-to-alert time</div>
+          </div>
+          <div class="stat-block">
+            <div class="sb-val" id="sv4">0</div>
+            <div class="sb-desc">Uptime SLA guaranteed</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- How it Works -->
+    <section class="section">
+      <div class="container">
+        <div class="section-hd">
+          <div class="eyebrow" style="margin-bottom:1rem">How it works</div>
+          <div class="section-h2" style="margin-bottom:0.75rem">Three layers of protection</div>
+          <p class="section-p">Continuous monitoring across every relevant threat surface, from the visible web to the deepest dark web markets.</p>
+        </div>
+        <div class="hiw-grid">
+          <div class="hiw-cell">
+            <div class="hiw-step">01 — Monitor</div>
+            <div class="hiw-icon-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </div>
+            <div class="hiw-h">24/7 Continuous Crawling</div>
+            <p class="hiw-p">Automated scanners check every intelligence source every 30 seconds, around the clock, looking for your domains, keywords, and email patterns.</p>
+            <div class="hiw-sources">
+              <span class="hiw-src">Pastebin, Ghostbin, Hastebin</span>
+              <span class="hiw-src">GitHub public repositories</span>
+              <span class="hiw-src">Dark web forums & markets</span>
+              <span class="hiw-src">HIBP, DeHashed, LeakCheck APIs</span>
+            </div>
+          </div>
+          <div class="hiw-cell">
+            <div class="hiw-step">02 — Detect</div>
+            <div class="hiw-icon-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polygon points="12 6 12 14 16 10"/></svg>
+            </div>
+            <div class="hiw-h">AI-Powered Classification</div>
+            <p class="hiw-p">ML models classify severity, data type, and context — distinguishing real credential dumps from false positives with 97.4% precision.</p>
+            <div class="hiw-sources">
+              <span class="hiw-src">Email & password pattern matching</span>
+              <span class="hiw-src">API key fingerprinting (200+ types)</span>
+              <span class="hiw-src">PII classification engine</span>
+              <span class="hiw-src">Risk scoring 0–100 per incident</span>
+            </div>
+          </div>
+          <div class="hiw-cell">
+            <div class="hiw-step">03 — Respond</div>
+            <div class="hiw-icon-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            </div>
+            <div class="hiw-h">Instant Alert & Remediation</div>
+            <p class="hiw-p">Alerts delivered in under 30 seconds via Slack, email, PagerDuty, or webhook — with full context and automated remediation playbooks.</p>
+            <div class="hiw-sources">
+              <span class="hiw-src">Slack, Teams, PagerDuty</span>
+              <span class="hiw-src">Jira, Splunk, SIEM integration</span>
+              <span class="hiw-src">Auto password reset & key revocation</span>
+              <span class="hiw-src">GDPR 72h notification auto-fill</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="section" style="padding-top:0">
+      <div class="container">
+        <div class="section-hd-row">
+          <div>
+            <div class="eyebrow" style="margin-bottom:0.75rem">Features</div>
+            <div class="section-h2">Everything your security team needs</div>
+          </div>
+          <a href="dashboard.html" class="btn btn-secondary btn-sm">View Dashboard →</a>
+        </div>
+        <div class="features-grid">
+          <div class="feat-cell">
+            <div class="feat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
+            <div class="feat-h">Dark Web Intelligence</div>
+            <p class="feat-p">Indexed Tor sources, cybercrime forums, and breach markets — including channels most security tools never reach.</p>
+            <span class="feat-badge">Exclusive Coverage</span>
+          </div>
+          <div class="feat-cell">
+            <div class="feat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg></div>
+            <div class="feat-h">Paste Site Monitor</div>
+            <p class="feat-p">Real-time crawling of 50+ paste platforms. Detects email dumps, credentials, and sensitive documents within seconds of posting.</p>
+          </div>
+          <div class="feat-cell">
+            <div class="feat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6" y2="6"/><line x1="6" y1="18" x2="6" y2="18"/></svg></div>
+            <div class="feat-h">API Secret Detection</div>
+            <p class="feat-p">Automatically fingerprints AWS, GitHub, Stripe, Twilio, and 200+ credential types in public code, comments, and issues.</p>
+          </div>
+          <div class="feat-cell">
+            <div class="feat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+            <div class="feat-h">30-Second Alerting</div>
+            <p class="feat-p">Industry-leading detection-to-alert time. Be notified before attackers can exploit your exposure.</p>
+          </div>
+          <div class="feat-cell">
+            <div class="feat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
+            <div class="feat-h">AutoRemediate</div>
+            <p class="feat-p">Connect your IdP, cloud, and code repos. When credentials leak, DarkSentinel auto-revokes keys and forces password resets.</p>
+            <span class="feat-badge">Enterprise</span>
+          </div>
+          <div class="feat-cell">
+            <div class="feat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+            <div class="feat-h">Compliance Reports</div>
+            <p class="feat-p">One-click GDPR, HIPAA, SOC 2, and ISO 27001 incident reports pre-filled with your breach data and timeline.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Live Feed -->
+    <section class="section" style="padding-top:0">
+      <div class="container">
+        <div class="section-hd-row">
+          <div>
+            <div class="eyebrow" style="margin-bottom:0.75rem">Live Feed</div>
+            <div class="section-h2">Global threat activity</div>
+          </div>
+          <a href="threat-intel.html" class="btn btn-secondary btn-sm">View All Threats →</a>
+        </div>
+        <div class="feed-window">
+          <div class="feed-topbar">
+            <div class="feed-topbar-left">
+              <div class="live-dot"></div>
+              <span style="font-size:0.8rem;font-weight:600">Live Intelligence Feed</span>
+            </div>
+            <span style="font-size:0.72rem;color:var(--tx-3)" id="feedCount"></span>
+          </div>
+          <div id="landingFeed" style="max-height:320px;overflow-y:auto"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Unique Tools -->
+    <section class="section-sm" style="padding-top:0">
+      <div class="container">
+        <div class="section-hd-row">
+          <div>
+            <div class="eyebrow" style="margin-bottom:0.75rem">Unique Tools</div>
+            <div class="section-h2">Only on DarkSentinel</div>
+          </div>
+        </div>
+        <div class="tools-grid">
+          <div class="tool-card" onclick="location.href='check.html'">
+            <div class="tool-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            </div>
+            <div>
+              <div class="tool-h">DomainScan Pro</div>
+              <p class="tool-p">Scan your entire domain across 15+ breach databases simultaneously — including subdomains, IP ranges, and tech stack fingerprints.</p>
+              <div class="tool-link">Try it free <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+            </div>
+          </div>
+          <div class="tool-card" onclick="location.href='threat-intel.html'">
+            <div class="tool-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77A5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+            </div>
+            <div>
+              <div class="tool-h">ThreatIQ Engine</div>
+              <p class="tool-p">AI predicts targeted attacks 4–8 hours before they happen by correlating dark web chatter patterns with your org's threat profile.</p>
+              <div class="tool-link">Explore <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+            </div>
+          </div>
+          <div class="tool-card" onclick="location.href='threat-intel.html'">
+            <div class="tool-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+            <div>
+              <div class="tool-h">BreachSnapshot</div>
+              <p class="tool-p">Timeline of every breach affecting your org — when data appeared, where it spread, and how exposure evolved over time.</p>
+              <div class="tool-link">View timeline <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+            </div>
+          </div>
+          <div class="tool-card" onclick="location.href='reports.html'">
+            <div class="tool-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <div>
+              <div class="tool-h">AutoRemediate</div>
+              <p class="tool-p">When credentials leak, DarkSentinel automatically revokes keys, resets passwords, and fires GDPR notices — zero manual intervention.</p>
+              <div class="tool-link">Configure <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Trust/Certs -->
+    <section class="section-sm" style="padding-top:0">
+      <div class="container" style="text-align:center">
+        <p style="font-size:0.78rem;color:var(--tx-3);font-weight:600;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:1.5rem">Security & Compliance</p>
+        <div class="certs-strip">
+          <div class="cert-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>SOC 2 Type II</div>
+          <div class="cert-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>ISO 27001</div>
+          <div class="cert-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>GDPR Compliant</div>
+          <div class="cert-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>AES-256 Encrypted</div>
+          <div class="cert-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>Zero-Trust Architecture</div>
+          <div class="cert-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>Bug Bounty Active</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="section cta-section">
+      <div class="container-sm">
+        <div class="cta-card">
+          <div class="cta-h2">Ready to protect your organization?</div>
+          <p class="cta-p">Join 5,000+ security teams. Get alerted within 30 seconds when your credentials appear on the dark web.</p>
+          <div class="cta-btns">
+            <a href="check.html" class="btn btn-primary btn-xl">Start Free Scan</a>
+            <a href="dashboard.html" class="btn btn-secondary btn-xl">View Dashboard</a>
+          </div>
+          <div class="cta-trust">
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>No credit card</span>
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>Results in 30s</span>
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>No data stored</span>
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>GDPR compliant</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-inner">
+          <span>© 2026 DarkSentinel. Enterprise Threat Intelligence Platform.</span>
+          <div class="footer-links">
+            <a href="check.html">Check Exposure</a>
+            <a href="dashboard.html">Dashboard</a>
+            <a href="threat-intel.html">Threat Intel</a>
+            <a href="reports.html">Reports</a>
+          </div>
+          <div class="footer-live">
+            <div class="dot dot-emerald dot-pulse"></div>
+            All systems operational
+          </div>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    // Counter animation
+    const cvs=[
+      {id:'sv1',val:'15.4',suf:'B+',dec:true},{id:'sv2',val:'2847',suf:'+',dec:false},
+      {id:'sv3',val:'28',suf:'s',dec:false},{id:'sv4',val:'99.9',suf:'%',dec:true}
+    ];
+    const obs=new IntersectionObserver(([e])=>{
+      if(!e.isIntersecting) return; obs.disconnect();
+      cvs.forEach(({id,val,suf,dec})=>{
+        const el=document.getElementById(id);
+        const t=parseFloat(val); const dur=1600; const st=performance.now();
+        const tick=now=>{
+          const p=Math.min((now-st)/dur,1); const ease=1-Math.pow(1-p,3);
+          el.textContent=(dec?(t*ease).toFixed(1):Math.floor(t*ease))+suf;
+          if(p<1) requestAnimationFrame(tick);
+          else el.textContent=(dec?t.toFixed(1):t)+suf;
+        }; requestAnimationFrame(tick);
+      });
+    });
+    obs.observe(document.querySelector('.stats-section'));
+
+    // Hero scan
+    function heroScan(){
+      const v=document.getElementById('heroInput').value.trim();
+      if(!v){document.getElementById('heroInput').focus();return;}
+      location.href='check.html?q='+encodeURIComponent(v);
+    }
+    document.getElementById('heroInput').addEventListener('keydown',e=>{ if(e.key==='Enter') heroScan(); });
+
+    // Live feed
+    const feeds=[
+      {sev:'critical',src:'BreachForums',txt:'Credential dump sale — 1,284 example.com accounts including plaintext passwords',t:'1m ago'},
+      {sev:'critical',src:'Pastebin',txt:'Email/password combo list — 47 corporate accounts identified, active exposure',t:'4m ago'},
+      {sev:'high',src:'GitHub',txt:'AWS_ACCESS_KEY_ID exposed in public fork of example/backend — key is active',t:'12m ago'},
+      {sev:'high',src:'Telegram',txt:'Phishing kit targeting corp VPN login page distributed in 2,400-member channel',t:'18m ago'},
+      {sev:'high',src:'DeHashed',txt:'Domain match in ComboList #4471 — 389 credentials with bcrypt hashes',t:'25m ago'},
+      {sev:'medium',src:'Ghostbin',txt:'Internal IP range and subdomain enumeration results found in public paste',t:'41m ago'},
+      {sev:'medium',src:'XSS.is',txt:'Dark web forum discussion about example.com VPN infrastructure vulnerabilities',t:'1h ago'},
+      {sev:'low',src:'HIBP',txt:'3 accounts found in 2018 MyFitnessPal breach — hashed, low active risk',t:'3h ago'},
+    ];
+    const ledMap={critical:'led-red',high:'led-amber',medium:'led-yellow',low:'led-emerald'};
+    function renderFeed(items){
+      const el=document.getElementById('landingFeed');
+      const cnt=document.getElementById('feedCount');
+      el.innerHTML=items.map(i=>`
+        <div class="feed-row">
+          <div class="feed-led ${ledMap[i.sev]}"></div>
+          <div class="feed-body">
+            <div class="feed-title">${i.txt}</div>
+            <div class="feed-meta">
+              <span class="feed-src">${i.src}</span>
+              <span class="badge badge-${i.sev}">${i.sev}</span>
+            </div>
+          </div>
+          <div class="feed-ts">${i.t}</div>
+        </div>`).join('');
+      if(cnt) cnt.textContent=`${items.length} events today`;
+    }
+    let lf=[...feeds];
+    renderFeed(lf);
+    const newFeeds=[
+      {sev:'critical',src:'Pastebin',txt:'New paste detected — analyzing for domain matches…',t:'just now'},
+      {sev:'high',src:'GitHub',txt:'New API key pattern detected in public repository',t:'just now'},
+    ];
+    let ni=0;
+    setInterval(()=>{
+      lf.unshift({...newFeeds[ni++%newFeeds.length],t:'just now'});
+      if(lf.length>12) lf=lf.slice(0,12);
+      renderFeed(lf);
+    },7000);
+  </script>
+</body>
+</html>

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Check Exposure — DarkSentinel</title>
+  <meta name="description" content="Check if your email, domain, or credentials have been exposed in dark web dumps, paste sites, or breach databases." />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .check-page   { position:relative;z-index:1;max-width:800px;margin:0 auto;padding:3rem 1.5rem 5rem; }
+    /* Scan type tabs */
+    .scan-types   { display:flex;gap:0.375rem;flex-wrap:wrap;margin-bottom:1.25rem; }
+    .st-btn { font-size:0.8rem;font-weight:600;padding:0.35rem 0.875rem;border-radius:var(--r);border:1px solid var(--border-md);color:var(--tx-3);background:none;cursor:pointer;font-family:var(--font);transition:all var(--t); }
+    .st-btn.active{background:var(--indigo-bg);border-color:var(--indigo-bd);color:var(--indigo-lt);}
+    .st-btn:hover:not(.active){border-color:var(--border-lg);color:var(--tx-2);}
+    /* Search area */
+    .search-card  { background:var(--bg-raised);border:1px solid var(--border-md);border-radius:var(--r-xl);padding:1.75rem;margin-bottom:1.25rem; }
+    .search-row   { display:flex;gap:0.5rem; }
+    .search-row .form-input-icon { flex:1; }
+    /* Radar */
+    .scan-progress{background:var(--bg-raised);border:1px solid var(--border);border-radius:var(--r-xl);padding:3rem;text-align:center;display:none;}
+    .scan-progress.show{display:block;}
+    .radar-anim { width:64px;height:64px;position:relative;margin:0 auto 1.5rem;display:flex;align-items:center;justify-content:center; }
+    .ra-ring { position:absolute;border-radius:50%;border:1px solid rgba(79,70,229,0.2); }
+    .rr1{width:64px;height:64px;} .rr2{width:44px;height:44px;} .rr3{width:26px;height:26px;}
+    .ra-sweep{position:absolute;width:32px;height:1px;background:linear-gradient(90deg,transparent,var(--indigo));transform-origin:left center;top:50%;left:50%;animation:raSpin 1.8s linear infinite;}
+    @keyframes raSpin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+    .ra-core{width:8px;height:8px;border-radius:50%;background:var(--indigo);box-shadow:0 0 8px var(--indigo);}
+    .scan-lbl{font-size:0.825rem;font-weight:600;color:var(--tx-2);margin-bottom:0.625rem;font-family:var(--mono);}
+    .scan-pct{font-size:0.72rem;color:var(--tx-3);font-family:var(--mono);margin-top:0.375rem;}
+    /* Results */
+    .result-banner{border-radius:var(--r-xl);padding:1.5rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:1.25rem;flex-wrap:wrap;}
+    .rb-pwned{background:var(--red-bg);border:1px solid var(--red-bd);}
+    .rb-safe {background:var(--emerald-bg);border:1px solid var(--emerald-bd);}
+    .rb-icon {font-size:2.5rem;flex-shrink:0;}
+    .rb-main {flex:1;min-width:0;}
+    .rb-h    {font-size:1.1rem;font-weight:700;margin-bottom:0.3rem;letter-spacing:-0.01em;}
+    .rb-sub  {font-size:0.825rem;color:var(--tx-2);}
+    .risk-badge{text-align:center;flex-shrink:0;}
+    .rk-num{font-size:1.75rem;font-weight:800;letter-spacing:-0.03em;}
+    .rk-lbl{font-size:0.62rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--tx-3);}
+    /* Breach cards */
+    .breach-grid{ display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:0.875rem; }
+    .breach-card{ background:var(--bg-raised);border:1px solid var(--border);border-radius:var(--r-lg);padding:1.125rem;transition:border-color var(--t); }
+    .breach-card:hover{border-color:var(--border-md);}
+    .bc-hd  {display:flex;align-items:center;gap:0.625rem;margin-bottom:0.625rem;}
+    .bc-logo{width:34px;height:34px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:800;flex-shrink:0;}
+    .bc-name{font-size:0.875rem;font-weight:700;}
+    .bc-date{font-size:0.7rem;color:var(--tx-3);}
+    .bc-desc{font-size:0.78rem;color:var(--tx-2);line-height:1.55;margin-bottom:0.625rem;}
+    .bc-types{display:flex;flex-wrap:wrap;gap:0.25rem;margin-bottom:0.5rem;}
+    .dt-tag {font-size:0.62rem;padding:0.12rem 0.4rem;border-radius:var(--r-sm);background:var(--sky-bg);border:1px solid var(--sky-bd);color:var(--sky);}
+    .bc-count{font-size:0.72rem;color:var(--tx-3);}
+    /* Paste items */
+    .paste-row{padding:0.875rem 0;border-bottom:1px solid var(--border);}
+    .paste-row:last-child{border-bottom:none;}
+    /* Actions */
+    .action-item{display:flex;gap:1rem;padding:0.875rem;border-radius:var(--r-lg);border:1px solid var(--border);border-left:2px solid transparent;margin-bottom:0.625rem;transition:border-color var(--t);}
+    .action-item:hover{border-color:var(--border-md);}
+    .ai-critical{border-left-color:var(--red);}
+    .ai-high    {border-left-color:var(--amber);}
+    .ai-medium  {border-left-color:#eab308;}
+    .ai-low     {border-left-color:var(--emerald);}
+    .ai-icon{font-size:1.25rem;flex-shrink:0;}
+    .ai-title{font-size:0.825rem;font-weight:700;margin-bottom:0.25rem;}
+    .ai-desc {font-size:0.78rem;color:var(--tx-2);line-height:1.55;}
+    /* Sources */
+    .sources-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:0.625rem;}
+    .src-card{background:var(--bg-raised);border:1px solid var(--border);border-radius:var(--r-lg);padding:1rem;text-align:center;transition:border-color var(--t);}
+    .src-card:hover{border-color:var(--border-md);}
+    .src-icon{font-size:1.25rem;margin-bottom:0.4rem;}
+    .src-name-t{font-size:0.78rem;font-weight:700;}
+    .src-cnt{font-size:0.68rem;color:var(--tx-3);}
+    /* No results */
+    .no-r{text-align:center;padding:2.5rem 1rem;color:var(--tx-3);font-size:0.85rem;}
+    .no-r-title{display:block;font-size:1.25rem;margin-bottom:0.375rem;color:var(--emerald);}
+  </style>
+</head>
+<body>
+  <div class="ambient"><div class="amb-blob amb-1"></div></div>
+
+  <nav class="topnav">
+    <div class="topnav-inner">
+      <a href="index.html" class="nav-logo">
+        <div class="nav-logo-icon"><svg viewBox="0 0 14 14" fill="none"><path d="M7 1L1.5 3.5v4.5c0 3.3 2.3 6.3 5.5 7 3.2-.7 5.5-3.7 5.5-7V3.5L7 1z" fill="white" opacity="0.9"/><circle cx="7" cy="8" r="2" fill="none" stroke="#09090f" stroke-width="1.1"/><circle cx="7" cy="8" r="0.8" fill="#09090f"/></svg></div>
+        <span class="nav-logo-text">DarkSentinel</span>
+      </a>
+      <div class="nav-links">
+        <a href="index.html" class="nav-link">Platform</a>
+        <a href="check.html" class="nav-link active">Check Exposure</a>
+        <a href="dashboard.html" class="nav-link">Dashboard</a>
+        <a href="threat-intel.html" class="nav-link">Threat Intel</a>
+        <a href="reports.html" class="nav-link">Reports</a>
+      </div>
+      <div class="nav-right"><a href="dashboard.html" class="btn btn-primary btn-sm">Dashboard</a></div>
+    </div>
+  </nav>
+
+  <div class="page">
+    <div class="page-hero" style="position:relative;z-index:1;">
+      <div class="container-sm">
+        <div class="eyebrow" style="margin-bottom:0.75rem">Exposure Scanner</div>
+        <h1 class="page-hero" style="border:none;padding:0;margin-bottom:0.375rem;font-size:1.75rem;font-weight:800;letter-spacing:-0.03em">Is your data on the dark web?</h1>
+        <p style="font-size:0.875rem;color:var(--tx-2)">Search 15+ breach databases, paste sites, and dark web sources instantly. Free and anonymous.</p>
+      </div>
+    </div>
+
+    <div class="check-page">
+      <!-- Scan Type -->
+      <div class="scan-types">
+        <button class="st-btn active" onclick="switchType('email',this)">Email / Phone</button>
+        <button class="st-btn" onclick="switchType('domain',this)">Domain</button>
+        <button class="st-btn" onclick="switchType('username',this)">Username</button>
+        <button class="st-btn" onclick="switchType('ip',this)">IP Address</button>
+      </div>
+
+      <!-- Search -->
+      <div class="search-card">
+        <label class="form-label" id="searchLabel">Email or Phone Number</label>
+        <div class="search-row">
+          <div class="form-input-icon" style="flex:1">
+            <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></div>
+            <input class="form-input" type="email" id="scanInput" placeholder="you@yourcompany.com" />
+          </div>
+          <button class="btn btn-primary" onclick="runScan()">Scan Now</button>
+        </div>
+        <p style="font-size:0.72rem;color:var(--tx-3);display:flex;align-items:center;gap:0.35rem;margin-top:0.625rem">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Your query is never stored. Fully anonymous & GDPR-compliant.
+        </p>
+      </div>
+
+      <!-- Scanning Progress -->
+      <div class="scan-progress" id="scanProgress">
+        <div class="radar-anim">
+          <div class="ra-ring rr1"></div><div class="ra-ring rr2"></div><div class="ra-ring rr3"></div>
+          <div class="ra-sweep"></div><div class="ra-core"></div>
+        </div>
+        <div class="scan-lbl" id="scanLabel">Initializing scan…</div>
+        <div class="progress" style="max-width:300px;margin:0 auto 0.375rem"><div class="progress-bar pb-indigo" id="scanFill" style="width:0%"></div></div>
+        <div class="scan-pct" id="scanPct">0%</div>
+      </div>
+
+      <!-- Results -->
+      <div id="resultsWrap" class="hidden">
+        <div id="resultBanner"></div>
+        <div class="tab-bar" id="resTabs" style="margin-top:1rem;margin-bottom:1rem">
+          <button class="tab-item active" onclick="resTab('breaches',this)">Breaches</button>
+          <button class="tab-item" onclick="resTab('pastes',this)">Paste Dumps</button>
+          <button class="tab-item" onclick="resTab('darkweb',this)">Dark Web</button>
+          <button class="tab-item" onclick="resTab('actions',this)">Recommended Actions</button>
+        </div>
+        <div id="breachesPane"><div class="breach-grid" id="breachGrid"></div></div>
+        <div id="pastesPane" class="hidden"><div class="card" id="pastesCard" style="padding:0"></div></div>
+        <div id="darkwebPane" class="hidden"><div class="card" id="dwCard" style="padding:0"></div></div>
+        <div id="actionsPane" class="hidden"><div id="actionsList"></div></div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;background:var(--indigo-bg);border:1px solid var(--indigo-bd);border-radius:var(--r-lg);padding:1rem 1.25rem;margin-top:1.25rem;flex-wrap:wrap;gap:0.75rem">
+          <span style="font-size:0.825rem;color:var(--tx-2)">Enable continuous monitoring for future exposure alerts.</span>
+          <a href="dashboard.html" class="btn btn-primary btn-sm">Enable Monitoring →</a>
+        </div>
+      </div>
+
+      <!-- Sources -->
+      <div style="margin-top:3.5rem">
+        <p style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--tx-3);text-align:center;margin-bottom:1rem">Databases & sources we check</p>
+        <div class="sources-grid">
+          <div class="src-card"><div class="src-icon">🔍</div><div class="src-name-t">HaveIBeenPwned</div><div class="src-cnt">790+ breaches</div></div>
+          <div class="src-card"><div class="src-icon">🔓</div><div class="src-name-t">DeHashed</div><div class="src-cnt">15B+ records</div></div>
+          <div class="src-card"><div class="src-icon">🧪</div><div class="src-name-t">LeakCheck</div><div class="src-cnt">7B+ credentials</div></div>
+          <div class="src-card"><div class="src-icon">📋</div><div class="src-name-t">Pastebin</div><div class="src-cnt">Live crawl</div></div>
+          <div class="src-card"><div class="src-icon">👻</div><div class="src-name-t">Ghostbin</div><div class="src-cnt">Live crawl</div></div>
+          <div class="src-card"><div class="src-icon">🐱</div><div class="src-name-t">GitHub</div><div class="src-cnt">Public repos</div></div>
+          <div class="src-card"><div class="src-icon">🌑</div><div class="src-name-t">Dark Forums</div><div class="src-cnt">Indexed</div></div>
+          <div class="src-card"><div class="src-icon">📡</div><div class="src-name-t">Telegram</div><div class="src-cnt">Cybercrime groups</div></div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="footer"><div class="container"><div class="footer-inner">
+      <span>© 2026 DarkSentinel</span>
+      <div class="footer-links"><a href="index.html">Home</a><a href="dashboard.html">Dashboard</a></div>
+      <div class="footer-live"><div class="dot dot-emerald dot-pulse"></div>All systems operational</div>
+    </div></div></footer>
+  </div>
+
+  <script src="check.js"></script>
+</body>
+</html>
